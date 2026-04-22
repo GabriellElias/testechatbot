@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>YuarTech AI | Grupo Estratégico V1.6</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root { --app-height: 100%; }
+
+        html, body { overflow: hidden; height: 100%; width: 100%; position: fixed; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: #fdfdfd; 
+            display: flex; 
+            flex-direction: column; 
+            height: var(--app-height);
+        }
+
+        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid #e2e8f0; }
+        .bubble-user { background: #0f172a; color: white; border-radius: 1.25rem 1.25rem 0 1.25rem; }
+        .bubble-ai { background: white; color: #1e293b; border: 1px solid #f1f5f9; border-radius: 1.25rem 1.25rem 1.25rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        
+        .slide-up { animation: slideUp 0.5s ease-out forwards; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* ANIMAÇÃO DE POP-IN */
+        .pop-in { animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; transform-origin: left bottom; }
+        .pop-in-user { animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; transform-origin: right bottom; }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.5) translateY(30px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* MODO APRESENTAÇÃO 3D */
+        #presentation-overlay { display: none; perspective: 2500px; z-index: 300; background: radial-gradient(circle at center, #1e293b, #010409); }
+        .demo-chat-container { 
+            transform-style: preserve-3d;
+            transition: transform 2.5s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+            transform: rotateY(20deg) rotateX(10deg) scale(0.8);
+            box-shadow: -50px 80px 120px rgba(0,0,0,0.8);
+        }
+
+        /* ÂNGULOS DE CÂMARA DINÂMICOS E FLUIDOS */
+        .cam-init { transform: rotateY(35deg) rotateX(15deg) scale(0.7) translateZ(-100px); }
+        .cam-ai-talk { transform: rotateY(15deg) rotateX(5deg) scale(0.95) translateZ(50px); }
+        .cam-user-type { transform: rotateY(-15deg) rotateX(8deg) scale(0.95) translateZ(80px); }
+        .cam-showcase { transform: rotateY(5deg) rotateX(-5deg) scale(1.05) translateZ(150px); }
+        .cam-close { transform: rotateY(0deg) rotateX(0deg) scale(1.1) translateZ(200px); }
+
+        /* ANIMAÇÃO DA CÂMERA FOTOGRÁFICA (ASSEMBLY) */
+        #camera-assembly { 
+            position: absolute; width: 200px; height: 150px; z-index: 400; pointer-events: none; opacity: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .cam-part { position: absolute; transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .cam-body { width: 140px; height: 90px; background: #334155; border-radius: 12px; transform: translateY(300px); }
+        .cam-lens { width: 60px; height: 60px; background: #1e293b; border: 4px solid #475569; border-radius: 50%; transform: scale(0) translateZ(200px); }
+        .cam-flash { width: 40px; height: 20px; background: #94a3b8; border-radius: 4px; top: -10px; transform: translateY(-300px); }
+        
+        .assembling .cam-body { transform: translateY(0); }
+        .assembling .cam-lens { transform: scale(1) translateZ(0); }
+        .assembling .cam-flash { transform: translateY(0); }
+
+        /* FLASH FINAL */
+        #flash-effect { position: fixed; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 1000; }
+        .flash-active { animation: flashAnim 0.8s ease-out forwards; }
+        @keyframes flashAnim {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .markdown-content table { width: 100%; margin: 12px 0; border-radius: 8px; overflow: hidden; border: 1px solid #f1f5f9; font-size: 11px; background: #ffffff; }
+        .markdown-content th { background: #f8fafc; text-align: left; padding: 8px; font-weight: 800; color: #64748b; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
+        .markdown-content td { padding: 8px; border-bottom: 1px solid #f8fafc; color: #1e293b; }
+
+        .btn-present { animation: pulse-blue 2s infinite; }
+        @keyframes pulse-blue {
+            0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.5); }
+            70% { box-shadow: 0 0 0 12px rgba(37, 99, 235, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+
+        textarea { scrollbar-width: none; -ms-overflow-style: none; max-height: 150px; }
+        footer { padding-bottom: env(safe-area-inset-bottom, 1rem); }
+    </style>
+</head>
+<body class="text-slate-900">
+
+    <div id="flash-effect"></div>
+
+    <!-- Interface de Apresentação (Comercial) -->
+    <div id="presentation-overlay" class="fixed inset-0 flex items-center justify-center p-4 overflow-hidden">
+        
+        <!-- Photographic Camera Assembly UI -->
+        <div id="camera-assembly">
+            <div class="cam-part cam-body"></div>
+            <div class="cam-part cam-lens"></div>
+            <div class="cam-part cam-flash"></div>
+        </div>
+
+        <div class="absolute top-10 w-full text-center px-6 z-50">
+            <p id="demo-subtitle" class="text-blue-500 text-[10px] font-black uppercase tracking-[0.4em] mb-2 opacity-0 transition-all duration-700">Premium Production</p>
+            <h3 id="demo-text" class="text-white text-2xl font-extrabold tracking-tighter opacity-0 transition-all duration-700">Grupo YuarTech</h3>
+        </div>
+        
+        <div id="demo-chat" class="demo-chat-container bg-white w-full max-w-[350px] h-[70vh] rounded-[3.5rem] overflow-hidden flex flex-col relative border-[10px] border-slate-900">
+            <div class="p-6 border-b flex items-center gap-3 bg-slate-50">
+                <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-layer-group"></i></div>
+                <div>
+                    <p class="font-black text-[9px] uppercase tracking-widest text-blue-600">GRUPO YUARTECH</p>
+                    <p class="font-bold text-xs">Consultor Estratégico</p>
+                </div>
+            </div>
+            
+            <div id="demo-msgs" class="flex-1 p-6 space-y-5 overflow-hidden bg-white flex flex-col justify-end"></div>
+
+            <div class="p-5 border-t bg-slate-50 flex items-center gap-2">
+                <div id="demo-input-mock" class="flex-1 bg-white border border-slate-200 rounded-full px-5 py-3 text-[13px] text-slate-400 font-medium h-12 flex items-center">Aguardando...</div>
+                <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white"><i class="fas fa-paper-plane"></i></div>
+            </div>
+        </div>
+
+        <button onclick="stopPresentation(false)" class="absolute bottom-8 text-white/20 hover:text-white/60 text-[9px] font-black uppercase tracking-[0.2em] transition-all">Pular Comercial</button>
+    </div>
+
+    <!-- Onboarding -->
+    <div id="onboarding" class="fixed inset-0 z-[100] bg-white flex items-center justify-center p-6 transition-all duration-500">
+        <div class="max-w-md w-full text-center slide-up">
+            <div class="w-24 h-24 bg-blue-600 rounded-[2.5rem] flex items-center justify-center text-white mx-auto mb-6 shadow-2xl rotate-6">
+                <i class="fas fa-bolt text-4xl"></i>
+            </div>
+            <h2 class="text-4xl font-extrabold tracking-tighter text-slate-900 mb-2">YuarTech AI</h2>
+            <p class="text-slate-500 font-medium mb-12 text-sm">Consultoria Estratégica Digital</p>
+            <button onclick="startChat()" class="w-full bg-slate-900 text-white font-bold py-5 rounded-2xl shadow-xl active:scale-95 transition-all text-lg tracking-wide uppercase">
+                Iniciar Atendimento
+            </button>
+        </div>
+    </div>
+
+    <!-- Interface Real -->
+    <div id="chat-view" class="hidden flex flex-col h-full bg-slate-50 overflow-hidden">
+        <header class="glass flex-none px-6 py-4 flex items-center justify-between shadow-sm z-10">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-robot"></i></div>
+                <div>
+                    <h1 class="font-extrabold text-slate-900 text-sm tracking-tight uppercase">Yuar Assistant</h1>
+                    <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span><span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Online</span></div>
+                </div>
+            </div>
+            <button onclick="confirmExit()" class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-[10px] font-black tracking-widest hover:bg-red-600 hover:text-white transition-all uppercase">
+                Encerrar
+            </button>
+        </header>
+
+        <main id="chat-container" class="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 bg-slate-50"></main>
+
+        <footer class="flex-none p-3 bg-white border-t border-slate-100 shadow-lg z-10">
+            <div class="max-w-4xl mx-auto">
+                <div id="tips-area" class="flex overflow-x-auto gap-2 mb-3 pb-1 no-scrollbar"></div>
+                <form id="chat-form" class="flex items-end gap-2 bg-slate-50 rounded-[1.5rem] p-1.5 focus-within:bg-white border border-slate-100 transition-all shadow-sm">
+                    <textarea id="user-input" rows="1" placeholder="Fale com o grupo..." class="flex-1 bg-transparent border-0 px-4 py-2.5 outline-none resize-none text-[15px] font-medium disabled:opacity-50"></textarea>
+                    <button type="submit" id="send-btn" class="w-11 h-11 flex-none bg-blue-600 text-white rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-all disabled:bg-slate-300">
+                        <i class="fas fa-arrow-up text-lg"></i>
+                    </button>
+                </form>
+                <div class="mt-2 px-3 flex justify-between items-center">
+                    <button onclick="startPresentation()" class="btn-present text-[8px] font-black text-white bg-blue-600 px-3 py-1.5 rounded-full uppercase tracking-widest transition-all">Apresentar</button>
+                    <p id="session-tag" class="text-[8px] font-black text-slate-300 uppercase tracking-widest">SESSÃO: ----</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const GROQ_KEY = "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"; 
+        const EMAILJS_SVID = "service_ib209th";
+        const EMAILJS_TPID = "template_ev8l22v";
+        const EMAILJS_PKEY = "eyrQGdo_Ig5K9r3ea"; 
+        const ADMIN_EMAIL = "gabriellelnmarques3@gmail.com";
+
+        emailjs.init(EMAILJS_PKEY);
+
+        const citiesData = { "Acre": ["Rio Branco", "Cruzeiro do Sul"], "Amazonas": ["Manaus", "Parintins"] };
+        let user = { name: '', email: '', country: 'Brasil', state: '', city: '', session_id: '' };
+        let history = [];
+        let step = 'ask_name';
+        let isProcessing = false;
+
+        // --- APRESENTAÇÃO CINEMATOGRÁFICA 1.6 ---
+        async function startPresentation() {
+            const overlay = document.getElementById('presentation-overlay');
+            const demoChat = document.getElementById('demo-chat');
+            const demoMsgs = document.getElementById('demo-msgs');
+            const demoInput = document.getElementById('demo-input-mock');
+            const demoText = document.getElementById('demo-text');
+            const demoSub = document.getElementById('demo-subtitle');
+            const camAssembly = document.getElementById('camera-assembly');
+            
+            overlay.style.display = 'flex';
+            demoMsgs.innerHTML = '';
+            demoChat.style.opacity = '1';
+            camAssembly.style.opacity = '0';
+            camAssembly.classList.remove('assembling');
+            
+            const typeText = async (target, text) => {
+                target.innerText = "";
+                for(let char of text) { target.innerText += char; await new Promise(r => setTimeout(r, 40)); }
+            };
+
+            const addMsg = (text, isUser = false) => {
+                const div = document.createElement('div');
+                div.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+                const bubble = isUser ? 'bubble-user pop-in-user' : 'bubble-ai pop-in';
+                div.innerHTML = `<div class="${bubble} px-4 py-3 text-[11px] font-medium max-w-[85%] shadow-md">${marked.parse(text)}</div>`;
+                demoMsgs.appendChild(div);
+            };
+
+            const runScene = async (title, sub, camClass, action) => {
+                demoText.style.opacity = 0; demoSub.style.opacity = 0;
+                await new Promise(r => setTimeout(r, 400));
+                demoText.innerText = title; demoSub.innerText = sub;
+                demoText.style.opacity = 1; demoSub.style.opacity = 1;
+                demoChat.className = `demo-chat-container bg-white w-full max-w-[350px] h-[70vh] rounded-[3.5rem] overflow-hidden flex flex-col relative ${camClass}`;
+                await action();
+                await new Promise(r => setTimeout(r, 2000));
+            };
+
+            // SEQUÊNCIA FLUIDA
+            await runScene("Potencial Ilimitado", "Grupo YuarTech", "cam-init", async () => {
+                addMsg("Olá! Sou a inteligência comercial do **Grupo YuarTech**. Como podemos acelerar o seu negócio hoje?", false);
+            });
+
+            await runScene("Experiência de Conversa", "Tecnologia AI", "cam-user-type", async () => {
+                await typeText(demoInput, "Preciso de um plano de marketing visual.");
+                addMsg("Preciso de um plano de marketing visual.", true);
+                demoInput.innerText = "Yuar processando estratégia...";
+            });
+
+            await runScene("Clareza Comercial", "Cardápio Elite", "cam-showcase", async () => {
+                const table = `Temos opções exclusivas para o seu posicionamento:
+
+| Plano | Mensal | **Pré-pago (10% OFF)** |
+| :--- | :--- | :--- |
+| Básico | R$ 320 | **R$ 288** |
+| PRO Elite | R$ 800 | **R$ 720** |`;
+                addMsg(table, false);
+                demoInput.innerText = "Aguardando...";
+            });
+
+            await runScene("Conexão Humana", "Fechamento Direto", "cam-close", async () => {
+                addMsg("O plano PRO Elite me interessa muito!", true);
+                addMsg("Decisão inteligente! [TRIGGER_WHATSAPP] O nosso administrador fará o estudo técnico agora.", false);
+            });
+
+            // FINAL: CAMERA ASSEMBLY + FLASH
+            demoText.style.opacity = 0; demoSub.style.opacity = 0;
+            demoChat.style.transition = "all 1s ease-in";
+            demoChat.style.transform = "scale(0.5) translateZ(-500px)";
+            demoChat.style.opacity = "0";
+            
+            await new Promise(r => setTimeout(r, 800));
+            
+            camAssembly.style.opacity = '1';
+            camAssembly.classList.add('assembling');
+            
+            await new Promise(r => setTimeout(r, 1200));
+            
+            // Disparo do Flash
+            const flash = document.getElementById('flash-effect');
+            flash.classList.add('flash-active');
+            
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                flash.classList.remove('flash-active');
+            }, 400);
+        }
+
+        // --- SISTEMA CORE ---
+        function startChat() {
+            document.getElementById('onboarding').classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                document.getElementById('onboarding').classList.add('hidden');
+                document.getElementById('chat-view').classList.remove('hidden');
+                const welcome = "Olá! Seja bem-vindo ao **Grupo YuarTech**. 👋 Para começarmos uma consultoria personalizada, como você se chama?";
+                addMessage(welcome, false);
+                history.push({ role: "assistant", content: welcome });
+                document.getElementById('user-input').focus();
+            }, 500);
+        }
+
+        function extractFirstName(text) {
+            const stopWords = ['ola', 'olá', 'oi', 'bom', 'boa', 'dia', 'meu', 'nome', 'é', 'me', 'chamo', 'sou'];
+            let words = text.toLowerCase().replace(/[.,!?;:]/g, '').split(/\s+/);
+            let names = words.filter(w => !stopWords.includes(w) && w.length > 2);
+            return (names[0] || words[0]).charAt(0).toUpperCase() + (names[0] || words[0]).slice(1).toLowerCase();
+        }
+
+        async function askAI(text) {
+            const system = `Você é o consultor oficial do Grupo YuarTech. CLIENTE: ${user.name}. ESTRATÉGIA: Tabelas minimalistas. 10% OFF pré-pago (exceto Escala).`;
+            const messages = [{ role: "system", content: system }, ...history, { role: "user", content: text }];
+            try {
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages, temperature: 0.6 })
+                });
+                const data = await res.json();
+                return data.choices[0].message.content;
+            } catch (err) { return "Erro de rede."; }
+        }
+
+        async function handleFlow(text) {
+            if (isProcessing) return;
+            if (step === 'ask_name') {
+                user.name = extractFirstName(text);
+                addMessage(text, true); history.push({ role: "user", content: text });
+                step = 'ask_email';
+                setTimeout(() => { const m = `Muito prazer, **${user.name}**! Qual o seu e-mail de contacto?`; addMessage(m, false); history.push({ role: "assistant", content: m }); }, 600);
+            } 
+            else if (step === 'ask_email') {
+                if (!text.includes('@')) { addMessage(text, true); addMessage("E-mail inválido.", false); return; }
+                user.email = text; addMessage(text, true); history.push({ role: "user", content: text });
+                step = 'ask_location';
+                setTimeout(showLocationForm, 600);
+            }
+            else if (step === 'chatting') {
+                addMessage(text, true); history.push({ role: "user", content: text });
+                setUIState(true);
+                const aiRes = await askAI(text);
+                setUIState(false);
+                processAIResponse(aiRes);
+            }
+        }
+
+        function showLocationForm() {
+            const div = document.createElement('div');
+            div.className = `flex justify-start mb-6 slide-up`;
+            div.id = "location-form-container";
+            div.innerHTML = `
+                <div class="bubble-ai px-5 py-5 max-w-[90%] w-full shadow-lg border-2 border-blue-50">
+                    <p class="font-bold mb-4 text-xs text-slate-500 uppercase tracking-widest">Localização:</p>
+                    <div class="space-y-4">
+                        <select id="form-state" onchange="updateCitiesList()" class="w-full border-2 border-slate-100 p-3 rounded-xl text-sm outline-none font-medium">
+                            <option value="Acre">Acre</option>
+                            <option value="Amazonas">Amazonas</option>
+                        </select>
+                        <select id="form-city" class="w-full border-2 border-slate-100 p-3 rounded-xl text-sm outline-none font-medium"></select>
+                        <button onclick="submitLocation()" class="w-full bg-slate-900 text-white font-black py-4 rounded-xl shadow-xl active:scale-95 text-xs uppercase tracking-widest">Confirmar</button>
+                    </div>
+                </div>`;
+            document.getElementById('chat-container').appendChild(div);
+            updateCitiesList();
+            scrollToBottom();
+        }
+
+        function updateCitiesList() {
+            const state = document.getElementById('form-state').value;
+            const citySelect = document.getElementById('form-city');
+            citySelect.innerHTML = '';
+            citiesData[state].forEach(city => { const opt = document.createElement('option'); opt.value = city; opt.innerText = city; citySelect.appendChild(opt); });
+        }
+
+        async function submitLocation() {
+            user.state = document.getElementById('form-state').value;
+            user.city = document.getElementById('form-city').value;
+            step = 'chatting';
+            user.session_id = Math.random().toString(36).substr(2, 6).toUpperCase();
+            document.getElementById('session-tag').innerText = `SESSÃO: ${user.session_id}`;
+            document.getElementById('location-form-container').remove();
+            const conf = `Região: **${user.city}, ${user.state}**. Qual o objetivo? Alcance ou Visual Redes Sociais?`;
+            addMessage(conf, false); history.push({ role: "assistant", content: conf });
+            updateTips(["Aumentar Alcance", "Visual Digital", "Preços"]);
+        }
+
+        function processAIResponse(text) {
+            if (text.includes("[TRIGGER_WHATSAPP]")) {
+                const clean = text.replace("[TRIGGER_WHATSAPP]", "").trim();
+                addMessage(clean, false); addWhatsAppButton();
+                addMessage("Resposta humana em até 5 horas.", false);
+                history.push({ role: "assistant", content: clean });
+            } else {
+                addMessage(text, false); history.push({ role: "assistant", content: text });
+            }
+            updateTips(["Instagram", "Escala", "Suporte Humano"]);
+        }
+
+        function addMessage(text, isUser = false) {
+            const div = document.createElement('div');
+            div.className = `flex ${isUser ? 'justify-end' : 'justify-start'} mb-6 slide-up`;
+            const bubble = isUser ? 'bubble-user' : 'bubble-ai';
+            div.innerHTML = `<div class="${bubble} px-5 py-3.5 max-w-[95%] sm:max-w-[85%] font-medium shadow-sm overflow-x-auto markdown-content">${isUser ? text : marked.parse(text)}</div>`;
+            document.getElementById('chat-container').appendChild(div);
+            scrollToBottom();
+        }
+
+        function addWhatsAppButton() {
+            const div = document.createElement('div');
+            div.className = 'flex justify-start mb-4 slide-up';
+            const url = `https://wa.me/5568992171233?text=${encodeURIComponent('Olá! ID: ' + user.session_id)}`;
+            div.innerHTML = `<button onclick="handleWhatsAppRedirect('${url}')" class="wa-btn px-8 py-4 shadow-xl flex items-center gap-3"><i class="fab fa-whatsapp text-xl"></i> FALAR NO WHATSAPP</button>`;
+            document.getElementById('chat-container').appendChild(div);
+        }
+
+        async function handleWhatsAppRedirect(url) { await sendHistoryEmail(false); window.open(url, '_blank'); }
+
+        function updateTips(tips) {
+            const area = document.getElementById('tips-area'); area.innerHTML = '';
+            tips.forEach(tip => {
+                const btn = document.createElement('button');
+                btn.className = "tip-btn px-4 py-2 rounded-full text-[10px] font-black text-slate-500 bg-white shadow-sm uppercase tracking-tighter flex-none";
+                btn.innerText = tip; btn.onclick = () => { if (isProcessing) return; document.getElementById('user-input').value = tip; document.getElementById('chat-form').dispatchEvent(new Event('submit')); };
+                area.appendChild(btn);
+            });
+        }
+
+        function confirmExit() { if (confirm("Encerrar e enviar histórico?")) finalizeAndSend(); }
+
+        async function sendHistoryEmail(showAlert = true) {
+            let htmlChat = `<div style="background-color: #f8fafc; padding: 30px; font-family: sans-serif;"><div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 25px;">`;
+            history.forEach(m => { const isU = m.role === 'user'; htmlChat += `<div style="text-align: ${isU ? 'right' : 'left'}; margin-bottom: 15px;"><div style="display: inline-block; padding: 10px; border-radius: 10px; background-color: ${isU ? '#0f172a' : '#f1f5f9'}; color: ${isU ? '#ffffff' : '#1e293b'}; font-size: 14px;">${m.content}</div></div>`; });
+            htmlChat += `</div></div>`;
+            try { await emailjs.send(EMAILJS_SVID, EMAILJS_TPID, { user_name: user.name, user_email: user.email, admin_email: ADMIN_EMAIL, session_id: user.session_id, chat_html: htmlChat }); if(showAlert) alert("Enviado!"); } catch (e) {}
+        }
+
+        async function finalizeAndSend() { await sendHistoryEmail(true); window.location.reload(); }
+        function scrollToBottom() { const c = document.getElementById('chat-container'); c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' }); }
+
+        function setUIState(processing) {
+            isProcessing = processing;
+            const input = document.getElementById('user-input');
+            const btn = document.getElementById('send-btn');
+            input.disabled = processing; btn.disabled = processing;
+            if (processing) {
+                const loader = document.createElement('div'); loader.id = 'ai-loader'; loader.className = 'flex justify-start mb-4';
+                loader.innerHTML = `<div class="bubble-ai px-4 py-2"><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+                document.getElementById('chat-container').appendChild(loader);
+            } else { document.getElementById('ai-loader')?.remove(); }
+            scrollToBottom();
+        }
+
+        document.getElementById('chat-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = document.getElementById('user-input').value.trim();
+            if (!text || isProcessing) return;
+            document.getElementById('user-input').value = '';
+            handleFlow(text);
+        });
+    </script>
+</body>
+</html>
